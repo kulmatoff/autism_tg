@@ -11,7 +11,7 @@ class OpenaiToken:
 
 @dataclass
 class Config:
-    tg_bot: TgBot,
+    tg_bot: TgBot
     openai_token: OpenaiToken
 
 def load_config():

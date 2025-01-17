@@ -1,34 +1,25 @@
-from question import QUESTIONS
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.scene import Scene, SceneRegistry, ScenesManager, on
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters.command import Command
+from aiogram import F, Router, html
+from aiogram.fsm.storage.memory import SimpleEventIsolation
+from aiogram.types import KeyboardButton, Message, ReplyKeyboardRemove
+from aiogram.utils.formatting import (
+    Bold,
+    as_key_value,
+    as_list,
+    as_numbered_list,
+    as_section,
+)
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from typing import Any
 
-class Form(StatesGroup):
-    waiting_for_response = State()
-    asking_questions = State()
+from .questions import *
 
-@dataclass
-class Answer:
-    """
-    Represents an answer to a question.
-    """
-    text: str
-    """The answer text"""
-    sensomotorika: int = 0
-    defectolog: int = 0
-    """Indicates if the answer is correct"""
+from ai_tools import get_completion
 
-@dataclass
-class Question:
-    text: str
-    """The question text"""
-    answers: list[Answer]
-    """List of answers"""
-    answer: str = field(init=False)
-    sensomotorika: int = 0
-    defectolog: int = 0
-
-    def __post_init__(self):
-        self.answer = next(answer.text for answer in self.answers if answer.sensomotorika>=0)
-
-quiz_router = Router()
+test_router = Router()
 
 class DiagnoseScene(Scene, state="asking_questions"):
     @on.message.enter()
@@ -87,16 +78,9 @@ class DiagnoseScene(Scene, state="asking_questions"):
                 ),
             ),
         )
-        completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Проанализируй ответы человека и дай первоначальный диагноз для специалиста на РАС."},
-                {"role": "user", "content": "".join(user_answers)}
-            ]
-        )
 
         # Получаем ответ от ChatGPT
-        bot_reply = completion.choices[0].message.content
+        bot_reply = get_completion(message="".join(user_answers), prompt="Проанализируй ответы человека и дай первоначальный диагноз для специалиста на РАС.")
         await message.answer(bot_reply)
 
         await message.answer(**content.as_kwargs(), reply_markup=ReplyKeyboardRemove())
@@ -134,4 +118,3 @@ class DiagnoseScene(Scene, state="asking_questions"):
         :return: None
         """
         await message.answer("Please select an answer.")
-

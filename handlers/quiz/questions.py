@@ -1,3 +1,34 @@
+from aiogram.fsm.state import State, StatesGroup
+from dataclasses import dataclass, field
+
+class Form(StatesGroup):
+    waiting_for_response = State()
+    asking_questions = State()
+
+@dataclass
+class Answer:
+    """
+    Represents an answer to a question.
+    """
+    text: str
+    """The answer text"""
+    sensomotorika: int = 0
+    defectolog: int = 0
+    """Indicates if the answer is correct"""
+
+@dataclass
+class Question:
+    text: str
+    """The question text"""
+    answers: list[Answer]
+    """List of answers"""
+    answer: str = field(init=False)
+    sensomotorika: int = 0
+    defectolog: int = 0
+
+    def __post_init__(self):
+        self.answer = next(answer.text for answer in self.answers if answer.sensomotorika>=0)
+
 QUESTIONS = [
     Question(
         text="Самоагрессия: (да/нет)",
